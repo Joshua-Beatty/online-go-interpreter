@@ -18,7 +18,8 @@
     "prebuild": "node scripts/copy-wasm.js",
     "build": "cd go-runner && cross-env GOOS=js GOARCH=wasm go build -o ../src/build/main.wasm",
     "serve": "cd src && http-server",
-    "dev": "npm run build && npm run serve"
+    "dev": "npm run build && npm run serve",
+    "pages-build": "node scripts/cloudflare-build.js"
   },
   "dependencies": {
     "cross-env": "^10.1.0",
