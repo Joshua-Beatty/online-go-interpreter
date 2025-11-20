@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <script src="build/wasm_exec.js"></script>
+    <script>
+        /* This registers the global 
+        type Result =
+        | { success: true; output: number }
+        | { success: false; message: string };
+        function run(input: string): Result
+
+        that runs a go program and returns a string with the stdout and stderr
+        like 
+        ```go
+        package main
+
+        import "fmt"
+
+func main() {
+fmt.Println("hello world")
+}
+        ```
+        */
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("build/main.wasm"), go.importObject).then((result) => {
+            go.run(result.instance);
+        });
+    </script>
+</head>
+
+<body>
+
+</body>
+
+</html>
