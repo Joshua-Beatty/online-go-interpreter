@@ -73,13 +73,11 @@ func registerCallbacks() {
 }
 
 func main() {
-	fmt.Println("Hello, WebAssembly!")
-	// fmt.Printf("Testing: %v/%v=%v\n", 10, 2, divide(10, 2))
-	fmt.Println("Hello, WebAssembly!!!!")
 	c := make(chan struct{}, 0)
 
-	println("WASM Go Initialized")
 	// register functions
 	registerCallbacks()
+	println("WASM Go Initialized")
+
 	<-c
 }
