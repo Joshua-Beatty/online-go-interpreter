@@ -13,15 +13,17 @@ import (
 
 type errorResult struct {
 	message string
+	output  string
 }
 type successResult struct {
-	output any
+	output string
 }
 
 func (e errorResult) ToValue() js.Value {
 	return js.ValueOf(map[string]any{
 		"success": false,
 		"message": e.message,
+		"output":  e.output,
 	})
 }
 
@@ -36,6 +38,7 @@ func run(this js.Value, args []js.Value) (ret any) {
 	if len(args) != 1 {
 		return errorResult{
 			message: fmt.Sprintf("Wrong number of arguments, expected: 1 got: %v", len(args)),
+			output:  "",
 		}.ToValue()
 	}
 
@@ -43,6 +46,7 @@ func run(this js.Value, args []js.Value) (ret any) {
 		if r := recover(); r != nil {
 			ret = errorResult{
 				message: fmt.Sprintf("Failed to convert argument: %v", r),
+				output:  "",
 			}.ToValue()
 		}
 	}()
@@ -58,9 +62,20 @@ func run(this js.Value, args []js.Value) (ret any) {
 
 	i.Use(stdlib.Symbols)
 
-	_, err := i.Eval(code)
+	prog, err := i.Compile(code)
 	if err != nil {
-		panic(err)
+		return errorResult{
+			message: fmt.Sprintf("failed to compile code: %v", err),
+			output:  buf.String(),
+		}.ToValue()
+	}
+
+	_, err = i.Execute(prog)
+	if err != nil {
+		return errorResult{
+			message: fmt.Sprintf("code exited with error"),
+			output:  buf.String(),
+		}.ToValue()
 	}
 
 	return successResult{

@@ -3,25 +3,15 @@
 
 <head>
     <meta charset="utf-8" />
+    <title>Online Go Interpreter</title>
     <script src="build/wasm_exec.js"></script>
+    <link rel="stylesheet" href="style.css">
     <script>
         /* This registers the global 
         type Result =
-        | { success: true; output: number }
-        | { success: false; message: string };
+        | { success: true; output: string }
+        | { success: false; message: string; output: string };
         function run(input: string): Result
-
-        that runs a go program and returns a string with the stdout and stderr
-        like 
-        ```go
-        package main
-
-        import "fmt"
-
-func main() {
-fmt.Println("hello world")
-}
-        ```
         */
         const go = new Go();
         WebAssembly.instantiateStreaming(fetch("build/main.wasm"), go.importObject).then((result) => {
@@ -31,7 +21,82 @@ fmt.Println("hello world")
 </head>
 
 <body>
+    <header>
+        <h1>Go Interpreter</h1>
+        <button id="run-btn">Run Code</button>
+    </header>
+    <div id="main-container">
+        <div id="editor-container"></div>
+        <div id="output-container"></div>
+    </div>
 
+    <!-- Load Monaco Editor -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+    <script>
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
+
+        require(['vs/editor/editor.main'], function () {
+            const editor = monaco.editor.create(document.getElementById('editor-container'), {
+                value: [
+                    'package main',
+                    '',
+                    'import "fmt"',
+                    '',
+                    'func main() {',
+                    '\tfmt.Println("Hello, World!")',
+                    '}'
+                ].join('\n'),
+                language: 'go',
+                theme: 'vs-dark',
+                automaticLayout: true,
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                scrollbar: {
+                    alwaysConsumeMouseWheel: false
+                }
+            });
+
+            document.getElementById('run-btn').addEventListener('click', () => {
+                const code = editor.getValue();
+                const outputContainer = document.getElementById('output-container');
+                outputContainer.innerHTML = 'Running...';
+                outputContainer.className = '';
+
+                // Small delay to allow UI to update
+                setTimeout(() => {
+                    try {
+                        if (typeof run !== 'function') {
+                            throw new Error("WASM not loaded yet or 'run' function missing.");
+                        }
+
+                        const result = run(code);
+
+                        if (result.success) {
+                            outputContainer.textContent = result.output;
+                            outputContainer.className = 'output-success';
+                        } else {
+                            outputContainer.innerHTML = '';
+
+                            const messageSpan = document.createElement('div');
+                            messageSpan.textContent = result.message;
+                            messageSpan.className = 'error-message';
+                            outputContainer.appendChild(messageSpan);
+
+                            if (result.output) {
+                                const outputSpan = document.createElement('div');
+                                outputSpan.textContent = result.output;
+                                outputContainer.appendChild(outputSpan);
+                            }
+                            outputContainer.className = '';
+                        }
+                    } catch (e) {
+                        outputContainer.textContent = "Error: " + e.message;
+                        outputContainer.className = 'output-error';
+                    }
+                }, 10);
+            });
+        });
+    </script>
 </body>
 
 </html>
