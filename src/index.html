@@ -15,9 +15,57 @@
         function run(input: string): Result
         */
         const go = new Go();
-        WebAssembly.instantiateStreaming(fetch("build/main.wasm"), go.importObject).then((result) => {
-            go.run(result.instance);
-        });
+
+        // Load WASM from multiple chunk files
+        async function loadWasmChunks() {
+            const chunks = [];
+            let chunkIndex = 0;
+
+            // Fetch all chunks
+            while (true) {
+                try {
+                    const response = await fetch(`build/main.wasm.part${chunkIndex}`);
+                    if (!response.ok) {
+                        // No more chunks
+                        break;
+                    }
+                    const arrayBuffer = await response.arrayBuffer();
+                    chunks.push(new Uint8Array(arrayBuffer));
+                    chunkIndex++;
+                } catch (error) {
+                    // No more chunks
+                    break;
+                }
+            }
+
+            if (chunks.length === 0) {
+                throw new Error('No WASM chunks found!');
+            }
+
+            // Calculate total size
+            const totalSize = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+            console.log(`Loaded ${chunks.length} WASM chunks, total size: ${(totalSize / (1024 * 1024)).toFixed(2)}MB`);
+
+            // Concatenate all chunks into a single Uint8Array
+            const wasmBytes = new Uint8Array(totalSize);
+            let offset = 0;
+            for (const chunk of chunks) {
+                wasmBytes.set(chunk, offset);
+                offset += chunk.length;
+            }
+
+            return wasmBytes;
+        }
+
+        // Initialize WASM
+        loadWasmChunks()
+            .then(wasmBytes => WebAssembly.instantiate(wasmBytes, go.importObject))
+            .then(result => {
+                go.run(result.instance);
+            })
+            .catch(error => {
+                console.error('Failed to load WASM:', error);
+            });
     </script>
 </head>
 

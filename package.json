@@ -17,13 +17,14 @@
   "scripts": {
     "prebuild": "node scripts/copy-wasm.js",
     "build": "cd go-runner && cross-env GOOS=js GOARCH=wasm go build -o ../src/build/main.wasm",
+    "postbuild": "node scripts/split-wasm.js && rimraf src/build/main.wasm",
     "serve": "cd src && http-server",
-    "dev": "npm run build && npm run serve",
-    "pages-build": "node scripts/cloudflare-build.js"
+    "dev": "npm run build && npm run serve"
   },
   "dependencies": {
     "cross-env": "^10.1.0",
     "http-server": "^14.1.1",
+    "rimraf": "^6.1.2",
     "shx": "^0.4.0"
   }
 }
