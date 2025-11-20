@@ -75,3 +75,60 @@ h1 {
 .error-message {
     color: #f48771;
 }
+
+footer {
+    padding: 10px 20px;
+    background-color: #252526;
+    border-top: 1px solid var(--border-color);
+    text-align: right;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+footer a {
+    color: var(--text-color);
+    text-decoration: none;
+    transition: color 0.2s;
+    opacity: 0.8;
+}
+
+footer a:hover {
+    color: var(--accent-color);
+    opacity: 1;
+}
+
+.separator {
+    margin: 0 10px;
+    color: var(--text-color);
+    opacity: 0.5;
+}
+
+/* SweetAlert2 Custom Styles */
+.swal2-icon-small {
+    font-size: 12px !important;
+    width: 3em !important;
+    height: 3em !important;
+    margin: 1.5em auto .5em !important;
+}
+
+.about-content {
+    text-align: left;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.about-content a {
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+.about-content a:hover {
+    text-decoration: underline;
+}
+
+.about-footer {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #333;
+    text-align: right;
+}

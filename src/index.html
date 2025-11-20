@@ -6,6 +6,7 @@
     <title>Online Go Interpreter</title>
     <script src="build/wasm_exec.js"></script>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         /* This registers the global 
         type Result =
@@ -21,6 +22,7 @@
 </head>
 
 <body>
+
     <header>
         <h1>Go Interpreter</h1>
         <button id="run-btn">Run Code</button>
@@ -29,6 +31,9 @@
         <div id="editor-container"></div>
         <div id="output-container"></div>
     </div>
+    <footer>
+        <a href="#" id="about-link">About</a>
+    </footer>
 
     <!-- Load Monaco Editor -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
@@ -94,6 +99,33 @@
                         outputContainer.className = 'output-error';
                     }
                 }, 10);
+            });
+
+            document.getElementById('about-link').addEventListener('click', (e) => {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'About',
+                    html: `
+                        <div class="about-content">
+                            <p>
+                                Powered by <a href="https://github.com/traefik/yaegi" target="_blank">Yaegi</a> and WebAssembly.
+                                <br>
+                                This interpreter runs entirely in your browser with no network calls.
+                            </p>
+                            <div class="about-footer">
+                                <a href="https://joshbeatty.me" target="_blank">About Me</a>
+                            </div>
+                        </div>
+                    `,
+                    confirmButtonText: 'Close',
+                    background: '#1e1e1e',
+                    color: '#d4d4d4',
+                    confirmButtonColor: '#0e639c',
+                    customClass: {
+                        icon: 'swal2-icon-small',
+                        popup: 'swal2-dark-popup'
+                    }
+                });
             });
         });
     </script>
