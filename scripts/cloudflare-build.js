@@ -1,8 +1,13 @@
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
 // GitHub URL for the WASM file
 const GITHUB_WASM_URL = 'https://github.com/Joshua-Beatty/online-go-interpreter/raw/refs/heads/main/src/build/main.wasm';
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Path to the build directory
 const buildDir = path.join(__dirname, '..', 'src');
