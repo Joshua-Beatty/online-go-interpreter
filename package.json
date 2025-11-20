@@ -24,6 +24,7 @@
   "dependencies": {
     "cross-env": "^10.1.0",
     "http-server": "^14.1.1",
+    "mkdirp": "^3.0.1",
     "rimraf": "^6.1.2",
     "shx": "^0.4.0"
   }

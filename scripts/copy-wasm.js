@@ -1,6 +1,9 @@
 import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
+import { mkdirpSync } from 'mkdirp'
+
+mkdirpSync('./src/build')
 
 // ask Go for GOROOT
 const goroot = execSync("go env GOROOT").toString().trim();
