@@ -168,6 +168,3 @@ go.work.sum
 
 # env file
 .env
-
-src/build/main.wasm
-src/build/wasm_exec.js
