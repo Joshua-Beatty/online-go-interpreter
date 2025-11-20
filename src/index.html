@@ -29,6 +29,14 @@
                         // No more chunks
                         break;
                     }
+
+                    // Check if we got HTML instead of binary data (Cloudflare Pages fallback)
+                    const contentType = response.headers.get('content-type') || '';
+                    if (contentType.includes('text/html')) {
+                        // This is the index page, not a WASM chunk - we're done
+                        break;
+                    }
+
                     const arrayBuffer = await response.arrayBuffer();
                     chunks.push(new Uint8Array(arrayBuffer));
                     chunkIndex++;
