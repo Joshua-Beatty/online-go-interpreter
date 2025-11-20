@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+import fs from "fs";
+import path from "path";
 
 // GitHub URL for the WASM file
 const GITHUB_WASM_URL = 'https://github.com/Joshua-Beatty/online-go-interpreter/raw/refs/heads/main/src/build/main.wasm';
