@@ -12,8 +12,20 @@
         type Result =
         | { success: true; output: string }
         | { success: false; message: string; output: string };
-        function run(input: string): Result
+        function run(input: string, onComplete: (result: Result) => void): { async: true }
         */
+
+        // Global callback for streaming output from Go
+        // This must be defined before WASM initialization
+        window.__goStreamOutput = function (data) {
+            const outputContainer = document.getElementById('output-container');
+            if (outputContainer) {
+                // Append the new data to the output container
+                const textNode = document.createTextNode(data);
+                outputContainer.appendChild(textNode);
+            }
+        };
+
         const go = new Go();
 
         // Load WASM from multiple chunk files
@@ -101,10 +113,17 @@
                 value: [
                     'package main',
                     '',
-                    'import "fmt"',
+                    'import (',
+                    '\t"fmt"',
+                    '\t"time"',
+                    ')',
                     '',
                     'func main() {',
-                    '\tfmt.Println("Hello, World!")',
+                    '\tfor i := 1; i <= 5; i++ {',
+                    '\t\tfmt.Printf("Line %d\\n", i)',
+                    '\t\ttime.Sleep(500 * time.Millisecond)',
+                    '\t}',
+                    '\tfmt.Println("Done!")',
                     '}'
                 ].join('\n'),
                 language: 'go',
@@ -130,25 +149,37 @@
                             throw new Error("WASM not loaded yet or 'run' function missing.");
                         }
 
-                        const result = run(code);
+                        // Clear output before running to show streamed output
+                        outputContainer.innerHTML = '';
 
-                        if (result.success) {
-                            outputContainer.textContent = result.output;
-                            outputContainer.className = 'output-success';
-                        } else {
-                            outputContainer.innerHTML = '';
+                        // Call run with a completion callback
+                        const result = run(code, (finalResult) => {
+                            // This callback is invoked when execution completes
+                            if (finalResult.success) {
+                                // Output was already streamed, just set success class
+                                outputContainer.className = 'output-success';
+                            } else {
+                                // Clear streamed output and show error
+                                outputContainer.innerHTML = '';
 
-                            const messageSpan = document.createElement('div');
-                            messageSpan.textContent = result.message;
-                            messageSpan.className = 'error-message';
-                            outputContainer.appendChild(messageSpan);
+                                const messageSpan = document.createElement('div');
+                                messageSpan.textContent = finalResult.message;
+                                messageSpan.className = 'error-message';
+                                outputContainer.appendChild(messageSpan);
 
-                            if (result.output) {
-                                const outputSpan = document.createElement('div');
-                                outputSpan.textContent = result.output;
-                                outputContainer.appendChild(outputSpan);
+                                if (finalResult.output) {
+                                    const outputSpan = document.createElement('div');
+                                    outputSpan.textContent = finalResult.output;
+                                    outputContainer.appendChild(outputSpan);
+                                }
+                                outputContainer.className = '';
                             }
-                            outputContainer.className = '';
+                        });
+
+                        // Check if the run function returned async indicator
+                        if (!result || !result.async) {
+                            // Fallback for synchronous execution (shouldn't happen)
+                            console.warn('Run function did not return async indicator');
                         }
                     } catch (e) {
                         outputContainer.textContent = "Error: " + e.message;
