@@ -5,10 +5,17 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"sync/atomic"
 	"syscall/js"
 
 	"github.com/traefik/yaegi/interp"
 	"github.com/traefik/yaegi/stdlib"
+)
+
+var (
+	// currentRunID tracks the latest execution generation.
+	// Old runs will check this and exit/stop streaming if they don't match.
+	currentRunID int64
 )
 
 type errorResult struct {
@@ -39,11 +46,13 @@ type streamingWriter struct {
 	buf     *bytes.Buffer
 	jsFunc  js.Value
 	hasFunc bool
+	runID   int64
 }
 
-func newStreamingWriter() *streamingWriter {
+func newStreamingWriter(runID int64) *streamingWriter {
 	sw := &streamingWriter{
-		buf: &bytes.Buffer{},
+		buf:   &bytes.Buffer{},
+		runID: runID,
 	}
 
 	// Try to get the JavaScript streaming function
@@ -58,6 +67,12 @@ func newStreamingWriter() *streamingWriter {
 }
 
 func (sw *streamingWriter) Write(p []byte) (n int, err error) {
+	// Check if this writer belongs to the current run
+	if atomic.LoadInt64(&currentRunID) != sw.runID {
+		// This is an old run, discard output silently
+		return len(p), nil
+	}
+
 	// Write to buffer for final output
 	n, err = sw.buf.Write(p)
 
@@ -83,6 +98,9 @@ func run(this js.Value, args []js.Value) (ret any) {
 		}.ToValue()
 	}
 
+	// Increment run ID for this new execution
+	runID := atomic.AddInt64(&currentRunID, 1)
+
 	code := args[0].String()
 
 	// Get the onComplete callback if provided
@@ -95,6 +113,11 @@ func run(this js.Value, args []js.Value) (ret any) {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
+				// Check if we are still the current run
+				if atomic.LoadInt64(&currentRunID) != runID {
+					return
+				}
+
 				result := errorResult{
 					message: fmt.Sprintf("Panic: %v", r),
 					output:  "",
@@ -105,7 +128,7 @@ func run(this js.Value, args []js.Value) (ret any) {
 			}
 		}()
 
-		streamWriter := newStreamingWriter()
+		streamWriter := newStreamingWriter(runID)
 
 		i := interp.New(interp.Options{
 			Stdout:       streamWriter,
@@ -117,6 +140,11 @@ func run(this js.Value, args []js.Value) (ret any) {
 
 		prog, err := i.Compile(code)
 		if err != nil {
+			// Check if we are still the current run
+			if atomic.LoadInt64(&currentRunID) != runID {
+				return
+			}
+
 			result := errorResult{
 				message: fmt.Sprintf("failed to compile code: %v", err),
 				output:  streamWriter.String(),
@@ -128,6 +156,12 @@ func run(this js.Value, args []js.Value) (ret any) {
 		}
 
 		_, err = i.Execute(prog)
+
+		// Check if we are still the current run
+		if atomic.LoadInt64(&currentRunID) != runID {
+			return
+		}
+
 		if err != nil {
 			result := errorResult{
 				message: "code exited with error",
@@ -162,7 +196,7 @@ func main() {
 
 	// register functions
 	registerCallbacks()
-	println("WASM Go Initialized")
+	println("WASM Go Initialized!")
 
 	<-c
 }
