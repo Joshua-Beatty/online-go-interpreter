@@ -23,6 +23,8 @@
                 // Append the new data to the output container
                 const textNode = document.createTextNode(data);
                 outputContainer.appendChild(textNode);
+                // Auto-scroll to bottom
+                outputContainer.scrollTop = outputContainer.scrollHeight;
             }
         };
 
@@ -159,21 +161,18 @@
                                 // Output was already streamed, just set success class
                                 outputContainer.className = 'output-success';
                             } else {
-                                // Clear streamed output and show error
-                                outputContainer.innerHTML = '';
-
-                                const messageSpan = document.createElement('div');
-                                messageSpan.textContent = finalResult.message;
-                                messageSpan.className = 'error-message';
-                                outputContainer.appendChild(messageSpan);
-
-                                if (finalResult.output) {
-                                    const outputSpan = document.createElement('div');
-                                    outputSpan.textContent = finalResult.output;
-                                    outputContainer.appendChild(outputSpan);
-                                }
-                                outputContainer.className = '';
+                                // Do not clear streamed output
+                                // Append error message to the bottom so it's always visible after the log
+                                const messageDiv = document.createElement('div');
+                                messageDiv.className = 'error-message';
+                                messageDiv.style.marginTop = '10px';
+                                messageDiv.style.paddingTop = '10px';
+                                messageDiv.style.borderTop = '1px solid #333';
+                                messageDiv.textContent = 'Error: ' + finalResult.message;
+                                outputContainer.appendChild(messageDiv);
                             }
+                            // Auto-scroll to bottom on completion
+                            outputContainer.scrollTop = outputContainer.scrollHeight;
                         });
 
                         // Check if the run function returned async indicator
